@@ -1,0 +1,82 @@
+事务
+事务具有ACID 一致性原子性格
+redis是不保证原子性的
+redis单条命令是保证原子性的，但是事务不保证原子性
+事务就是一组命令的集合 先当与队列
+执行事务的时候，一个事务中所有的命令都需要被序列化，会按照顺序执行
+一次性，顺序性，排他性 执行一系列的命令
+redis没有隔离级别的概念
+所有的命令在事务中没有直接被执行，只有在发起执行命令之后才会执行
+redis事务：开启事务multi，命令入队，执行事务exec
+redis可以实现乐观锁
+
+正常执行事务
+multi 开启事务
+set k1 v1
+set k2 v3
+get k2
+set k3 v3
+exec 执行事务
+
+放弃事务
+discard 取消事务 事务中的命令都不会被执行
+
+编译型异常-事务中所有的命令都不会被执行
+运行时异常-如果队列中存在语法性错误，那么执行命令时，其他命令是可以正常执行的
+
+multi
+set k1 v1 
+set k2 v2
+set k3 v3
+getset k3 错误
+set k4 v4
+set k5 v5 执行事务出错
+exec 
+get k5 所有的命令都没有被执行
+
+flushdb
+set k1 "v1"
+multi
+incr k1
+set k2 v2
+set k3 v3
+get k3
+exec 自己的写法有问题其他的还是可以正常执行的
+虽然第一条命令报错了，但是事务依然执行成功了
+
+悲观锁：认为什么时候都会出问题，无论什么时候都会加上锁
+乐观锁：很乐观，他认为什么时候都不会出现问题，更新数据的时候判断一下，在此期间检查是否有人修改这个数据
+version
+更新的时候比较version
+redis的监视测速
+set money 200
+set out 0
+watch money
+multi
+decrby money 20
+incrby out 20
+exec 执行之前，另外一个线程修改了我们的值，就会导致修改失败
+
+同时使用两个客户端向redis服务器发送事务提交，两个线程同时变动同一个值
+测试多线程修改值，使用watch可以当作redis的乐观锁操作
+
+如果值变了之后，要重新监视
+unwatch
+watch money
+decrby money 10
+incrby out 10
+unwatch
+watch money 
+multi
+decrby money
+incrby out 1
+exec
+本质是比监视的值是否发生了变化，如果没有变化那么可以执行成功，如果变化了就执行失败
+如果修改失败，获取最新的值就好
+
+dedis是redis官方推荐的java连接开发工具，相当于中间件
+一定要对jedis十分熟悉
+首先要导入对应的依赖进行编码测试
+1.连接数据库
+2.操作命令
+3.断开连接

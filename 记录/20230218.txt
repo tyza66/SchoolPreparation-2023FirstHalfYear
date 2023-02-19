@@ -1,0 +1,124 @@
+zadd myset 1 one
+zadd myset 2 two 3 three
+zrange myset 0 -1
+zrangebyscore salary -inf +inf
+zrangebyscore salary -inf 2500 withscore
+zset就是可排序的集合
+zrangebyscore后面的参数需要是最小值到最大值 是由低到高排序
+
+zrem salary tyza66 移除有序集合中指定的元素
+zrange salary 0 -1
+zcard salary 获取有序集合中的个数
+zrevrange salary 0 -1 从大到小排序
+flushdb
+zadd myset 1 hello 2 world 3 giao
+zcount myset 1 2 获取指定区间的成员数量
+
+其实用其他数据类型可以代替zset的全部功能
+很多的api需要去官网上自己看
+如果工作中有需要就可以去看看官网的文档
+比set里面多了一个排序，存班级成绩，工资表，游戏分数排行，带权重进行判断，b站的排行榜
+
+ 三种特殊的数据类型
+geospatial就是地理位置
+redis3.2推出了地理位置的功能
+这个功能可以推算地理位置的信息，比如两地之间的距离和方圆几里之内的人
+只有六个命令
+flushdb
+geoadd  china:city 166.40 39.90 beijing 添加地理位置
+geoadd  china:city 166.41 39.91 shanghai
+geoadd  china:city 166.42 39.92 chongqing 166.40 39.90 shenzhen
+geoadd china:city 120.16  30.24 hangzhou 108.96 34.26 xian 
+在这个规则中，无法添加两极，经纬度要在正确的范围内
+我们一般会下载城市数据使用java一键导入
+参数 key值 维度 精度 名称
+flushdb
+
+geopos china:city beijing chongqing 获取指定的城市的精度的纬度，是一个坐标值
+两个人之间的距离，使用geodist
+单位m，km，ni英里，ft英尺
+geodist china:city beijing shanghai
+geodist china:city beijing shanghai km 查看上海到北京的直线距离
+geodist china:city beijing chongqing km
+
+附近的人：
+获得所有附近的人的位置，定位-》通过半径来查询georadius
+georadius china:city 110 30 1000 km 以100 30 这个经纬度为中心，寻找方圆1000公里内的城市
+georadius china:city 110 30 500 km
+georadius china:city 110 30 500 km withdist 查询并显示到中心的直线距离
+georadius china:city 110 30 500 km withdist withcoord count 3 筛选出指定的结果
+所有城市都录入之后才能让结果更精确
+
+georandiusbymenber china: city beijing 1000 km
+georandiusbymenber china: city shanghai 100 km
+这个和上面用法一样但是找的是位于指定元素周围的点
+
+geohash 缩短了字符失去了精度
+geohash china:city beijing chongqing
+相当于把经纬度转换成字符串 11位
+把二维的经纬度转换成一维的字符串
+如果两格字符串越相似，则位置越近
+
+geo的实现原理其实是zset，我们甚至可以直接用zset命令去操作geo
+
+zrange china:city 0 -1 查看地图中全部元素
+zrem china:city beijing 移除地图中指定元素
+zrange china:city 0 -1
+ 
+js数组操作有的会改变原数组有的不会改变原数组
+防抖和节流本质是使用计时器或者监听器直到一定是时间或条件限制用户请求
+
+hyperloglog
+基数 A{1，3，5，7，8，7} 
+B{1，3，5，7，8}
+基数就是不重复的元素 = 5 可以接受误差
+redis2.8.9更新出来这个数据结构 是做基数统计的做法
+基数（cardinal number），在数学上，是集合论中刻画任意集合大小的一个概念。两个能够建立元素间一一对应的集合称为互相对等集合。例如3个人的集合和3匹马的集合可以建立一一对应，是两个对等的集合。
+
+网站UV（一个人访问多次就只能算作一个人）
+传统的方法就是使用set保存用户的id，然后统计set中元素的而概述作为判断标准
+这个方式如果保存了大量的用户id就比较麻烦
+我们目的是计数而不是保存用户的id
+这个算法的优点就是占用的内存是固定的，只需要费12k的内存（2^64）
+
+pfadd mykey a b c d e f g h i j 创建第一组元素
+pfcount mykey 统计mykey元素的基数的数量
+pfadd mykey2 i j z x c v b n m  创建第二个组
+pfcount mykey2 
+pfmerge mykey3 mykey mykey2 合并两组到新的 mykey3 得到并集
+pfcount mykey3 查看并集里的数量
+进行基数统计用它及比较划算
+如果允许容错，一档可以使用hyperloglog，不允许容错就不用
+
+bitmaps 位存贮 位图
+统计用户信息，登陆状态，打卡 这样两种状态的都可以用
+数据结构，都是操作二进制位进行记录，就只有0和1，两个状态
+365天 = 365bit 1字节=8bit 才46字节左右
+setbit sign 0 1
+setbit sign 1 0
+setbit sign 2 0 
+setbit sign 3 1
+setbit sign 4 1 
+setbit sign 5 0
+setbit sign 6 0 一周的打卡情况
+查看某一天是否有打卡  
+getbit sign 3 查看周四是否打卡
+getbit sign 6
+统计打卡的天数
+bitcount sign 统计这周的打卡记录就可以看到是否有全勤
+
+
+
+
+
+
+
+ 
+
+ 
+
+
+
+
+
+

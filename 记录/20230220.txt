@@ -1,13 +1,243 @@
+mongodb是一种以文档为存贮结构的数据库
+高可用，高性能，可伸缩
+直接存储json文档之后可以和js的接口无缝结合
+它能解决nosql普遍的问题
+文档-》集合-》数据库
+集合就相当关系型的于表
+语法和json几乎一样
+使用mongo可执行程序进行启动，默认端口号27017
+use 数据库名
+如果数据库不存在，就创建
+使用db命令可以显示当前用的数据库
+之后就可以用db代替当前在的数据库
+db.postCollection.insertOne(<js对象>)
+执行之后就会返回一个新添加的文档的id
+db.postCollection.find()
+db.postCollection.find({title:"xxx"})
+db.postCollection.find({"author.name":"xxx"})
+db.postCollection.updateOne({title:"xxx"},{$set: {title:"giao"}) 第一个参数是查询条件，第二个参数是要修改的值
+db.postCollection.updateMany(<查询条件>,<要修改的值>)
+db.postCollection.deleteOne({_id:ObjectId("XXX")}) 传递的参数是删除的条件
+db.postCollection.deleteMany({_id:ObjectId("XXX")})
 
+支持json与bson
+react+node(express)+mongo 全栈全用js
+mongod是服务
+数据的导入导出
+导入：mongoimport --db yzzy --type json products.json
+导出：mongoexport -d yzzy -c products -o pro.json
+yzzy是数据库的名字 products是集合（相当于表的名字）
+mongo是有图形界面客户端的
+查看所有数据库show dbs
+创建新的数据库use db_name
+创建一个Collection Document
+db.cool_new_stff.insertOne()
+db.cool.new.stff.insertOne()
 
+use example
+db
+doc = {"title": "A","desc","One"}
+db.some.insertOne(doc)
+这时候就可以看见example里面多了一个some集合
+db.cool_new_stff.insertOne() 在当前的连接上这个是有的
+db.cool.new.stff.insertOne() 以insertone为标准
+show collections
+清屏cls
+db.products.find({}).pretty() 这样可以展开看，更直观
+db.products.find({}，{"type":1}) 第二个参数是控制显示单个属性
+find的查找条件是支持正则的
+db.products.find({"name":{$regex:/phine/i}})
 
+limit与count
+count返回的是数值
+limit返回的是数组 
+db.products.find({"name":{$regex:/phine/i}}).count() 返回数量
+db.products.find({"name":{$regex:/phine/i}}).limit(2) 返回指定数量数组，但是超过有的只返回有的
 
+db.products.find({"name":{$regex:/phine/i}}).sort("name":1)
+db.products.find({"name":{$regex:/phine/i}}).sort("name":-1)
+排序
 
+db.products.find({"name":{$regex:/phine/i}}).sort("name":-1).skip(2)
 
+查询条件中
+$gt greater than
+$lt less than
+db.products.find({"price":{$gt:29}})
+前提是存在要查询的字段，如果没有的话就查不到的
+$or $and $all $in
+或 并 全 有
+db.products.find({$or:[{"price":{$lt:30}},{"rating":{$gt:3}}}]},{"price":1,"rating":1})
+db.products.find({$and:[{"price":{$lt:30}},{"rating":{$gt:3}}}]},{"price":1,"rating":1})
+db.products.find({"type":{$all:["accessory","case"]}},{"price":1,"rating":1,"type":1})
+all是条件里的俩都满足
+db.products.find({"type":{$in:["accessory","case"]}},{"price":1,"rating":1,"type":1})
+in是条件里满足一个就行
 
+修改数据
+$set 修改
+$unset 删除字段
+$inc 增加
+db.products.updateOne({"name":"giao"},{$set:{"price":999}});
+db.products.updateOne({"name":"giao"},{$unet:{"color":1}});
+db.products.updateOne({"name":"giao"},{$inc:{"price":1}});
+数组操作
+$push 添加元素
+$pull 移除元素
+db.products.updateOne({"name":"giao"},{$push:{"type":"some_new"}});
+db.products.updateOne({"name":"giao"},{$pull:{"type":"some_new"}});
+正常工作中尽量少删除数据，一般是用removed来标记
+delete是修改所有，deleteOne是修改一个
+建议按照_id进行删除
+db.products.deleteOne("_id":"ac7")
 
+node和mongo的联动
+npm i mongodb
+库的名字就叫做mongodb
+（java库https://mongodb.github.io/mongo-java-driver/）
+const MongoClient = require("mongodb").MongoClient;
+const url = "mongodb://localhost:27017"
+const db_name = "yzy"
+(async function(){
+    const client = new MongoClient(url);
+    try(){
+        await client.connect();
+        const database = client.db(db_name);
+        const collection_products = database.collection("products");
+        const product_list = collection_product.find();
+        //这里得到的是一个游标
+        while(await product_list.hasNext()){
+            const p await = product_list.next();
+            console.log(p.name);
+        }
+    }catch(e){
+        console.log(e.stack)
+    }
+    await client.close();
+}
+)();
+ 
+中间件可以使得不同的编程语言之间互相通信，相当于一个规范
+中间件的特征就是跨平台，而且不同的系统之间需要沟通，必须去解决这个问题
+RMI协议
+很多的东西都是用的中间件的技术
+中间件技术可以屏蔽操作系统的复杂性
+这个技术并不是什么新的东西
+分布式消息中间件，负载均衡中间件，缓存中间件，数据库中间件
 
+消息的协议是他们自定义的一种协议
+约定成俗的这些规则就叫做协议
+自定义的一种协议一定也得是基于之前的一些协议
+amqp协议能达成共识
+网路协议三要素：语法，语义，时序
+不适用http啥的是因为中间件需要高效率
+接收，存储，收发 tcp/ip太复杂 而且http都是短链接
+物联网mqtt协议 网络不稳定，低带宽情况 但是默认这个功能是关闭的
+kafka协议是基于tcp/ip，性能最高，二进制，非常快，支持持久化但是不支持事务
+持久化就是存磁盘中，不存内存中，之后还能读
 
+rabbitmq是基于amop协议使用erlang语言编写
+需要erlang环境
+kafka是java语言开发
+
+erlang -v可以检查是否安装成功erlang
+还需要安装一个插件叫做socat
+yum install -y socat
+之后就可以解压rabbitmq的包了
+rpm -Uvh XXX.rpm
+yum install xxx
+安装完就可以systemctl start rabbitmq-server
+serverctl status rabbitmq-serverctl
+
+rabbitmq是有网页管理界面的，默认情况下，没有集成插件
+需要rabbitmq-plugins enable  rabbitmq_management
+安装完可以得到一个在15672端口的一个管理界面
+默认账号密码都是guest 这个账号仅限本地的，如果登陆不上可能是防火墙没放开这个端口
+如果遇到租的服务器没办法在本地操作，就需要在后台用命令行建立角色并且给角色操作权限
+rabbitmqctl add_user admin admin 
+rabbitmqctl set_user_tags admin administrator
+还可以给用户添加资源权限 超级管理员已经有所有的权限了
+
+MQ就是消息队列 message queue
+使用场景就是流量削峰，可以先把信息弄进mq之后再排队处理
+流量削峰，日志处理，应用解耦，异步处理
+
+mq的吞吐量可以达到万级，延迟低，功能完备
+mq是基于amqp协议开发的
+rabbitmq-plugins.bat enable rabbitmq_management
+net stop rabbitMQ
+net start rabbitMQ
+这时候可以打开浏览器访问管理界面localhost:15672
+
+使用java连接：定义连接工厂，设置服务地址，端口，设置账号信息，用户名，密码，vhost，通过工程获取连接
+获取连接之后，从连接中船舰通道，声明并创建一个队列，如果对类已经存在，则用这个队列，消息内容，消息信息
+Cannel cannel = Connection.createChannel();
+cannel.queueDeclare(QUEUE_NAME, false, false, false, null);
+这个函数的参数：队列名字，是否持久化，是否独占模式，是否自动删除队列中的消息，其他额外参数（null）
+cannel.basicPublish("",QUEUE_NAME,null,message.getBytes());
+函数参数：交换机名，队列名，消息字节数组
+发送完记得关闭掉通道和连接
+
+作为与生产者对应的消费者，也是先创建链接，之后获得频道（通道），之后定义消费者
+创建队列消费者
+DefaultConsumer consumer = new DefaultConsumer(channel){
+    @Override
+    public void handleDelivery(String consumerTag,Envelope envelope,BasicProperties properties,byte[] body) throws IOException{
+        String mess = new String(body);
+        System.out.println("接收到的消息："+mess);
+    }
+}
+
+创建一个消费者监听器
+channel.basicConsume(QUEUE_NAME, true, consumer); 监听队列
+第二个参数是收到消息之后是否自动确认 fasle的话就要手动确认
+
+我们可以一个生产者多个消费者
+比如我们建立一个生产者，每十秒发送一个消息
+消费者获取连接获取通道，监听
+启动两个消费者，之后启动生产者发现消息被结束的很均匀
+！！！！！
+
+如果两个消费者的消费能力不一样，那么可以这么做
+channel.basicQos(1); 消费者预取的消费数量 
+这样如果已经取到的消息没有被消费完成就不会继续取
+加上这个东西之后代码需要新的调整
+在handle那个监听事件中需要对channel进行一些操作
+如果设置了预消费数量，那么在监听队列的时候channel.basicConsume(QUEUE_NAME, true, consumer);
+这里面的是否自动确认是不允许设置成true的，只能选false
+我们要在监听事件中收到消息之后执行channel.basicAck(envelope.getDeliveryTag(),false)；
+通过这条代码主动去回执确认
+参数：要回执确认的消息的编号，是否批量确认
+
+交换机
+一个源头可以有多个接收者
+获取通道之后通过channel.exchangeDeclare(EXCHANGE_NAME,"fanout")
+fanout是交换机的类型
+这回发布消息发布到的是交换机上面而不是和以前一样发送到队列上
+cannel.basicPublish(EXCHANGE_NAME,"",null,message.getBytes());
+之后我们在客户端获取通道之后要声明队列，之后绑定队列到交换机
+channel.queueDeclare(QUEUE NAME, false, false, false, null);
+channel.queueBind(QUEUE NAME EXCHANGE NAME,"");
+之后就可以将指定的交换机的消息发送到指定的队列上
+这样一个人发送，就可以有多个接收者
+
+routing
+消息类型-direct 接可以通过标识判断一个消息可以进哪些队列
+这个在声明交换机的的时候，类型选的是"dirct"了
+这个生产者发送消息的时候第二个参数填写的是"info"
+channel.basicPublish(EXCHANGE NAME,"info", null, message.getBytes());
+
+在消费者队列和交换机绑定的时候，第三个参数，之前空着的参数，绑定规则
+绑定规则可以指定多个，进行两次绑定就可以了"info","error"
+channel.queueBind(QUEUE NAME, EXCHANGE NAME,"error");
+channel.queueBind(QUEUE NAME, EXCHANGE NAME,"info");
+
+交换机类型topic
+这种交换机绑定的关键词可以包含通配符
+*.是一个单词 .#是多个单词
+
+最后一种消息类型叫做RPC远程调用
+mq通常作为异步请求，但是有时候需要消费者接收到信息之后处理返回一定的信息
 
 
 

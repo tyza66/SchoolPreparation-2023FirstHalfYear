@@ -2,23 +2,130 @@
 
 PRC 有的请求需要消费者去返回信息（客户端反馈）
 服务端接收客户端的消息也是需要先发送到指定的队列上面的
+而要发到哪个队列上，需要在一开始客户向生产者发送的信息中就包含的返回的队列信息
+在生产者创建通道之前创建并配置回调队列
+String callbackQueue = channel.queueDeclare().getQueue();
+queueingConsumer consumer = channel.queueingConsumer(channel);
+channel.basicConsumer(callbackQueue,true,consumer); 将消费者和监听队列进行绑定
+String correlationId = UUID.randomUUID().toString();
+AMQP.BasicProperties basicProperties = new AMQP.BasicProperties().builder().correlationId(correlationId).replayTo(callbackQueue).build();
+String message = "hello,rabbitmq";
+channel.basicPunish("",PRC_QUEUE_NAME,BasicProperties,message.getBytes());
+//发送了消息
+接受消息回调
+while(true){
+    queueingConsumer.Delivery delivery = consumer.nextDelivery();
+    String receivedCorrelationId = delivery.getProperties().getCottelationId();
+    if(correlationId.equals(receivedCorrelationId)){ //判断回执id和发送id是否一致
+        System.out.println("客户端接收的回调信息："+new String(delivery.getBody())+"，correaltionId"+correlationId);
+        break;
+    }
+}
 
+server接收端
+创建链接，创建通道，创建队列，声明消费者预取消息数量，创建消费者
+消费者监听队列
+channel.basicConsumer(PRC_QUEUE_NAME,false,consumer);
+while(true){
+    queueingConsumer.Delivery delivery = consumer.nextDelivery();
+    Steing message new String(delivery.getBody());
+    System.out.println("服务端接收："+message)；
+    确认收到消息
+    channel.basicAck(delivery.getEnvelope().getDeliveryTag(),false);
+    取出消息的correlationId
+    AMQP.BasicProperties properties = delivery.getProperties();
+    String correlationID = properties.getCottelationId();
+    创建具有相同消息的correlationId的消息属性
+    AMQP.BasicProperties relayProperties = new AMQP.BasicProperties().bulider().correlationID(correlationID).build();
+    properties.getReplyTo()获取回调队列名
+    channel.basicPunish("",properties.getReplyTo(),replyProperties,"111111111".getBytes());
+}
 
+集群
+普通模式，镜像模式
+实现负载均衡需要使用一个反向代理服务器
+生产者和消费者都不直接去访问集群服务器
+普通模式是需要队列中的某些消息的时候开始调
+镜像模式是同步，镜像模式是mq高可用的基础
+默认调试出来集群是普通模式，需要手动变成镜像模式
+直接在web里面admin创建vhost。进入polocies，选择vhost，镜像名字，pattern里^xxx是指的xxx打头的，作用范围可以填队列
+复制方法是自定义的比如ha-mode all 所有的
+不同的类型有不同的取值范围
+ha-sync-mode automatic
 
+镜像模式+反向代理实现负载均衡
+代理服务器我们选了haproxy
+yum install haproxy
+安装完之后修改haproxy.cfg文件
 
+使用springboot去集成这个mq，需要用的是amqp包
+在配置文件中加入配置
+spring.application.name=spirng-boot-rabbitmq
+spring.rabbitmq.host=192.168.56.55
+spring.rabbitmq.port=5673
+spring.rabbitmq.virtual-host=testHA
+spring.rabbitmq.username=admin
+spring.rabbitmq.password=123456
+之后发送方的时候，springboot给准备了一个模板
+AmqpTemplate rabbitTemplate;
+之后通过这个模板this.rabbitTemplate.convertAndSend("giaoqueue","消息")
+消费者需要用到一个注解叫做@RabbitListener(queues="giaoqueue")在类前
+之后使用@RabbitHandler就可以标记接收用的方法，并且用String做参数，最后会自动给进去
 
+微服务模块化
+微服务就是把一个整体变成很多的小模块，它是一种形式
+单一责任原则
+springboot通过的是基于http的rest方式通信
+他比dubbo更强大
 
+就是加了个注解@EnableDiscoveryClient
+springcloud有众多的子项目
 
+有一个restTemplate可以通过接口获得各种请求结果的对象
+这个东西注入之后，直接用这个类的方法，get的第一个参数是请求地址，第二个参数是返回值类
+post的第一个参数是地址，第二个参数是参数对象，第三个是返回值类型
 
+mybatis:
+type-aliases-package: com,kuang.springcloud.pojo
+config-location: classpath:mybatis/mybatis-config.xml
+mapper-locations: classpath:mybatis/mapper/*.xml  
 
+eureka心跳
+EurekaServer能监控微服务是否正常运行
+三大角色
+Eureka Server: 提供服务的注册于发现
+Service Provider: 将自身服务注册到Eureka中，从而使消费方能够找到。
+Service Consumer: 服务消费方从Eureka中获取注册服务列表，从而找到消费服务。
 
+server.port：7001
+eureka.instance.hostname : localhost
+eureka.client.register-with-eureka:fasle 是否向eureka注册中心注册自己
+eureka.client.fetch-registry:false 如果是false则表示自己是注册中心
+eureka.client.service-url:http://${eureka.instance.hostname}:${server.port}/eureka/
+固定的，拿来就用
 
+服务端启动类EnableEurekaServer
+之后启动springboot项目之后就可以去7001端口打开控制界面了
 
+一个项目导入的是eureka没有server那个包
+配置文件里面
+eureka.client.server-url.defaultZone = http://localhost:7001/eureka/
+之后去主启动类中加入@EnableRurekaClient
+eureka.instance.instance-id:springcloud-provider-dept8001 修改默认描述信息
+如果要使用监控信息的功能需要导入一个新的包叫做spring-boot-starter-actuator
+就是用来完善监控信息的
+之后可以去配置文件中进行配置
 
+info.app.name = giao
+info.company.name = giao
 
+自我保护机制：好死不如赖活着
+一定时间内某个服务没有反应了，那就等几分钟就抛出异常，就进入自我保护机制，再接受到心跳就继续复活
+会保护一些信息
+在SpringCloud中，可以使用 eureka.server,enable-self-preservation = false禁用自我保护模式
+[不推荐关闭自我保护机制]
 
-
-
+注册进来的微服务，可以获得一些消息了
 
 
 

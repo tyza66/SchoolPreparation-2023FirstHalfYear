@@ -1,0 +1,72 @@
+多个开发的时候要用到获得微服务的列表
+private DiscoveryClient client;
+Lisy<String> services = client.getServices();
+还可以得到具体的微服务信息
+client.getInstances() 参数是服务id
+for (ServiceInstance instance : instances) 
+{
+    System.out.println(
+        instance.getHost()+"\t"+
+        instance.getPort()+"\t"+
+        instance.getUri()+"\t"+
+        instance.getServiceId()
+    );
+}
+
+return this.client
+
+还需要添加一个注解@EnableDiscoveryClient 服务发现 
+
+单机和群集的配置不一样,可以再zone里面关联多个
+之后客户端发送应该发给集群了,zone里面写三个地址
+
+CAP原则:一致性,可用性,分区容错性三者不可兼得,最多俩
+zookeeper保证的是CP 一致性和容错性
+eureka保证的是AP 可用性和容错性
+
+ribbon负载均衡
+lvs
+nginx反向代理服务器
+
+80内个,配置文件里面eureka.client.register-with-eureka:false
+eureka.client.service-url.defaultZone= 三个服务端
+需要在80那个的启动类中加入@EnableEurekaClient
+
+然后configBean中配置负载均衡实现restTemplate
+在restTemplate前面加注解@bean,@LoadBalanced 就用了ribbon
+用ribbon做负载均衡的时候
+通过ribbon实现负载均衡的时候,地址应该是一个变量
+需要通过服务名来访问
+//Ribbon。我们这里的她址，应设是一个查从，通过服务名米访问
+//private static final String REST URL_PREFIX = "http://localhost:8001";
+private static final String REST-URL_PREFIX = "http://SPRINGCLOUD-PROVIDER-DEPT";
+
+ribbon和erurka整合以后,客户端可以直接调用,不用关心ip地址和端口号
+ribbon默认的方法是轮询
+负载均衡算法可以自定义
+
+irule设置负载均衡的策略
+//虎发负线均衡文魔RestTemplate
+IRuLe
+RoundRobinRule 轮的
+RandomRule5
+AvailabilityFilteringRule : 公先过游增，跳，访网障的服务~，剩下的进行轮的// RetryRule : 会先按照轮的获取厦务~，如梨服务获取失败，妙会在指定的时问内进行，重试
+
+@bean
+public IRule myRule(){
+    return new RandomRule(); 默认的随机模式 
+} 
+
+主启动类加一个@RibbonClient(name ="SPRINGCLOUD-PROVIDER-DEPT",configuration=giaoRule.class) 体现出来使用了ribbon
+
+feign也能负载均衡 
+feign集成了ribbon
+feign只需要服务里加一个注解就行了
+把需要被引用的接口类给弄一个接口,之后直接类上面加一个注解@FeignClient(value="服务名")
+之后下面写上getmapping,postmapping啥的
+
+
+
+
+
+

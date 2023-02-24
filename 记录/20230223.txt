@@ -1,0 +1,101 @@
+使用feign，在接口service里面加入注解@Compemet注册进springboot
+之后在客户端使用接口名的对象等于null
+之后客户端调用接口返回就用this,service,方法名
+调用方的启动类上面还要写@EnableFeignClient之后选择扫描包
+@EnableFeignClients(basePackages = ({"com.kuang.springcloud"})
+@CompemetScan("com.kuang.springcloud")
+
+hystrix服务熔断，弃车保帅
+熔断器相当于保险丝
+可以弄备选方法 
+在原来的方法上加上注释@HystrixCommand(fallbackMenthou="备选方法名")
+解决的问题就是无响应问题，抛出异常了还可以返回
+
+服务提供方的时候eureka.instance.prefer-ip-address=true就显示ip地址了
+1、SpringCloud： Hoxton.SR8
+2、SpringBoot：2.3.3.RELEASE
+
+以下版本全为：2.2.5.RELEASE
+3、服务者：pring-cloud-starter-netflix-eureka-client  
+4、Eureka：spring-cloud-starter-netflix-eureka-server
+5、消费者+Ribbon：spring-cloud-starter-netflix-eureka-client
+                                 spring-cloud-starter-netflix-ribbon 
+6、Feign:	 spring-cloud-starter-openfeign 
+7、Hystrix：spring-cloud-starter-netflix-hystrix
+	    spring-cloud-starter-netflix-hystrix-dashboard
+8、zuul：spring-cloud-starter-netflix-zuul
+
+服务降级说白了就是服务器资源不够用，有的先关了，提示这个服务暂停
+API里加入一个容器工厂定义一个FallBackFactory 之后必须重新给需要那些方法之后在那些里面实现熔断降级的操作
+之后在定义的feign客户端接口上弄fallbackFactory指定
+@FeigncClient(value = "SPRINGCLOUD-PROVIDER-DEPT",fallbackFactory = DeptClientServiceFallbackFactory.class）
+之后去配置文件开启降级
+feign.hystrix.enable = true就行了
+服务熔断和服务降级是两种方式解决雪崩问题 
+震务熔断，震务端 个服务超时或青异常，引起城断~，保险丝~
+服务降级:等户端 从整体网站请求负裁考虑。 ，当某个服务断或青关闭之后，服务将不再被调用-
+此时在客户端，我们可以准各一个 FaLlbackFactory，返回一个默认的值(缺省的)，整体的服务水平下降了~但是，好歹用比直接挂掉器
+
+doshboard流量监控
+启动类写注解@EnableHystrixDashboard
+服务端需要对应的监控依赖
+地址是/hystrix 野猪界面
+
+咱们要在启动类下面新建一个servlet
+@Bean
+public ServletRegistrationBean hystrixMetricsStreamServlet(){
+ServletRegistrationBean registrationBean = new ServletRegistrationBean(new HystrixMetricsStreamServlet());}
+registrationBean.addUrlMappings("/actuator/hystrix.streum ");
+return registrationBean
+之后就可以监视了
+
+zuul会注册进eureka
+提供代理，路由，过滤
+实现外部访问统一接口
+路由也拆出来一个服务
+
+eureka.instance_id=zuul9527.com
+prefer-ip-address:true就显示ip地址了
+https://www.kuangstudy.com/bbs/1374942542566551554
+启动类@EnableZuulProxy
+之后启动完成之后直接使用路由地址之后后面接上服务名（能隐藏）和路径就行了
+zuul.routes.mydept.serverId = xxx
+zuul.routes.mydept.path = /mydept/**
+但是这种原路径还能访问
+需要忽略原地址
+zuul.rgnored-services：xxx 不能再使用这个路径访问了
+可以用通配符
+zuul.preix = /xxx 设置前缀
+
+springcloud config可以和github相结合，可以用git放配置文件
+
+spring.cloud。config。server。git。url：git地址
+选https 启动类上@EnableConfigServer
+
+bootstrap是系统级别的配置文件，application是用户级
+这个地方spring.cloud。config。name还有spring.cloud。config。url：本地变化的地址仓库
+。bable：分支
+profile是选择用哪个环境
+name是文件名
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
